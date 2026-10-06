@@ -1,0 +1,843 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#DCEFD2">
+  <meta name="color-scheme" content="light">
+  <title>朝のブリーフ</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=BIZ+UDPGothic:wght@400;700&display=swap" rel="stylesheet">
+  <style>
+    /* 色の設定（ここを変えるとページ全体の色が変わります） */
+    :root {
+      --leaf-pale: #EEF7E8;   /* 背景：若葉のうすい緑 */
+      --leaf:      #DCEFD2;   /* 日付の帯：若葉色 */
+      --sprout:    #9CCF7F;   /* 差し色：新芽の黄緑 */
+      --forest:    #2C5E3B;   /* ボタン・強調：深い森の緑 */
+      --ink:       #1E3326;   /* 文字の色 */
+      --sub:       #557060;   /* 補足の文字 */
+      --paper:     #FFFFFF;   /* 入力欄などの白 */
+      --rule:      #CFE3C4;   /* 区切り線 */
+      --alert:     #B3261E;   /* 高めの値・エラーの赤 */
+      --alert-pale:#FCE9E7;   /* エラーの枠の背景（うすい赤） */
+      --rain:      #1D5FA6;   /* 雨の青 */
+      --font: "BIZ UDPGothic", "Hiragino Sans", "Noto Sans JP", sans-serif;
+    }
+
+    * { box-sizing: border-box; }
+
+    html { -webkit-text-size-adjust: 100%; }
+
+    body {
+      margin: 0;
+      background: var(--leaf-pale);
+      color: var(--ink);
+      font-family: var(--font);
+      font-size: 18px;
+      line-height: 1.6;
+    }
+
+    .page {
+      max-width: 480px;
+      margin: 0 auto;
+      padding-bottom: 40px;
+    }
+
+    /* ---------- 日付の帯（このページの主役） ---------- */
+    .masthead {
+      background: var(--leaf);
+      padding: 22px 20px 26px;
+      border-radius: 0 0 36px 36px;
+      position: relative;
+      overflow: hidden;
+    }
+    /* 地平線から昇る朝日 */
+    .masthead::after {
+      content: "";
+      position: absolute;
+      right: -40px;
+      bottom: -110px;
+      width: 220px;
+      height: 220px;
+      border-radius: 50%;
+      background: var(--sprout);
+      opacity: .45;
+    }
+    .masthead .greet {
+      margin: 0;
+      font-size: 17px;
+      color: var(--sub);
+    }
+    .masthead .day {
+      margin: 6px 0 0;
+      font-weight: 700;
+      line-height: 1.05;
+      position: relative;
+      z-index: 1;
+    }
+    .masthead .md {
+      display: block;
+      font-size: 64px;
+      letter-spacing: -.02em;
+    }
+    .masthead .md small { font-size: 32px; margin: 0 2px; }
+    .masthead .wd {
+      display: inline-block;
+      margin-top: 8px;
+      font-size: 22px;
+      background: var(--forest);
+      color: var(--paper);
+      padding: 2px 14px;
+      border-radius: 999px;
+    }
+
+    /* ---------- 各ブロック共通 ---------- */
+    .block { padding: 26px 16px 0; }
+    .block > h2 {
+      margin: 0 0 12px;
+      font-size: 22px;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .block > h2::before {
+      content: "";
+      width: 10px;
+      height: 22px;
+      border-radius: 5px;
+      background: var(--sprout);
+    }
+
+    .msg { margin: 10px 0 0; font-size: 16px; color: var(--sub); min-height: 1.5em; }
+    .msg.error { color: var(--alert); font-weight: 700; }
+    .msg.done { color: var(--forest); font-weight: 700; }
+
+    button {
+      font: inherit;
+      cursor: pointer;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .btn {
+      display: block;
+      width: 100%;
+      min-height: 60px;
+      border: 0;
+      border-radius: 16px;
+      background: var(--forest);
+      color: var(--paper);
+      font-size: 21px;
+      font-weight: 700;
+      letter-spacing: .04em;
+    }
+    .btn:active { transform: translateY(1px); filter: brightness(.92); }
+    .btn:disabled { background: var(--rule); color: var(--sub); }
+
+    input, select {
+      font: inherit;
+      color: var(--ink);
+      background: var(--paper);
+      border: 2px solid var(--rule);
+      border-radius: 12px;
+      padding: 10px 12px;
+      width: 100%;
+      min-height: 52px;
+    }
+    input:focus, select:focus { border-color: var(--forest); outline: none; }
+    button:focus-visible, a:focus-visible { outline: 3px solid var(--sprout); outline-offset: 2px; }
+
+    /* ---------- 血圧 ---------- */
+    .bp-sheet {
+      background: var(--paper);
+      border-radius: 22px;
+      padding: 6px 16px 16px;
+    }
+    .bp-row {
+      display: grid;
+      grid-template-columns: 1fr 120px 58px;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 0;
+      border-bottom: 1px solid var(--rule);
+    }
+    .bp-row label { font-size: 20px; font-weight: 700; }
+    .bp-row input {
+      font-size: 38px;
+      font-weight: 700;
+      text-align: center;
+      padding: 4px 6px;
+      min-height: 64px;
+      background: var(--leaf-pale);
+      border-color: transparent;
+    }
+    .bp-row input:focus { background: var(--paper); border-color: var(--forest); }
+    /* 入力がおかしいときの枠（赤） */
+    .bp-row input[aria-invalid="true"],
+    .bp-row input[aria-invalid="true"]:focus {
+      background: var(--alert-pale);
+      border-color: var(--alert);
+      color: var(--alert);
+    }
+    .bp-row.invalid label { color: var(--alert); }
+    .bp-row .unit { font-size: 15px; color: var(--sub); line-height: 1.3; }
+    /* 「記録する」と「2週間の記録」を同じ大きさで横に並べる */
+    .bp-actions {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-top: 16px;
+    }
+    .bp-actions .btn { padding: 0 6px; }
+
+
+    .saved-pop { animation: pop .5s ease-out; }
+    @keyframes pop {
+      0% { transform: scale(.96); opacity: .4; }
+      100% { transform: scale(1); opacity: 1; }
+    }
+
+    .history { margin-top: 18px; }
+    .history h3 { margin: 0 0 4px; font-size: 17px; color: var(--sub); font-weight: 700; }
+    .history ul { list-style: none; margin: 0; padding: 0; }
+    .history li {
+      display: grid;
+      grid-template-columns: 1fr auto auto;
+      align-items: baseline;
+      gap: 12px;
+      padding: 10px 2px;
+      border-bottom: 1px dashed var(--rule);
+    }
+    .history .when { font-size: 16px; color: var(--sub); }
+    .history .bp { font-size: 22px; font-weight: 700; white-space: nowrap; }
+    .history .bp.high { color: var(--alert); }
+    .history .bp.high::after { content: " 高め"; font-size: 13px; }
+    .history .pl { font-size: 16px; white-space: nowrap; }
+    .history .empty { color: var(--sub); font-size: 16px; padding: 8px 0; }
+    .history .note { margin: 10px 0 0; font-size: 14px; color: var(--sub); }
+
+    /* ---------- 天気 ---------- */
+    .wx {
+      background: var(--paper);
+      border-radius: 22px;
+      padding: 16px;
+      margin-bottom: 12px;
+    }
+    .wx-head {
+      display: flex;
+      align-items: baseline;
+      gap: 10px;
+      margin-bottom: 4px;
+    }
+    .wx-head .where { font-size: 20px; font-weight: 700; }
+    .wx-head .place { font-size: 15px; color: var(--sub); }
+
+    .wx-now {
+      display: grid;
+      grid-template-columns: auto 1fr;
+      align-items: center;
+      gap: 4px 14px;
+    }
+    .wx-now .icon { font-size: 56px; line-height: 1; grid-row: span 2; }
+    .wx-now .desc { font-size: 22px; font-weight: 700; }
+    .wx-now .temps { font-size: 30px; font-weight: 700; line-height: 1.2; }
+    .wx-now .temps .hi { color: var(--alert); }
+    .wx-now .temps .lo { color: var(--rain); }
+    .wx-now .temps .sep { color: var(--rule); margin: 0 4px; }
+
+    .wx-rain {
+      margin-top: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      background: var(--leaf-pale);
+      border-radius: 12px;
+      padding: 8px 12px;
+      font-size: 17px;
+    }
+    .wx-rain b { font-size: 24px; color: var(--rain); }
+    .wx-rain.umbrella { background: var(--rain); color: var(--paper); }
+    .wx-rain.umbrella b { color: var(--paper); }
+
+    .hours {
+      display: grid;
+      grid-template-columns: repeat(6, 1fr);
+      margin-top: 12px;
+      text-align: center;
+    }
+    .hours > div { padding: 4px 0; }
+    .hours > div + div { border-left: 1px solid var(--rule); }
+    .hours > .now { background: var(--leaf-pale); border-radius: 10px; }
+    .hours > .now + div { border-left-color: transparent; }
+    .hours > .now .h { color: var(--forest); font-weight: 700; }
+    .hours .h { font-size: 14px; color: var(--sub); }
+    .hours .i { font-size: 22px; line-height: 1.4; }
+    .hours .t { font-size: 18px; font-weight: 700; }
+    .hours .p { font-size: 14px; color: var(--rain); }
+
+    .wx .msg { margin: 6px 0 0; }
+
+    /* ---------- バスの時刻表 ---------- */
+    .bus-pair {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+    .bus-btn { min-height: 72px; font-size: 20px; padding: 0 6px; letter-spacing: 0; }
+    .bus-msg:empty { display: none; }
+
+    /* ---------- 勤務カレンダー ---------- */
+    .cal-btn {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      min-height: 84px;
+      font-size: 23px;
+      border-radius: 22px;
+    }
+    .cal-btn .ico { font-size: 32px; }
+
+    /* ---------- 設定（いちばん下にまとめる） ---------- */
+    .settings {
+      margin: 36px 16px 0;
+      border-top: 2px solid var(--rule);
+      padding-top: 8px;
+    }
+    .settings summary {
+      list-style: none;
+      cursor: pointer;
+      font-size: 17px;
+      color: var(--sub);
+      padding: 12px 0;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .settings summary::-webkit-details-marker { display: none; }
+    .settings summary::before { content: "⚙"; font-size: 20px; }
+    .settings summary::after { content: "＋"; margin-left: auto; }
+    .settings[open] summary::after { content: "－"; }
+
+    .set-group { padding: 6px 0 18px; }
+    .set-group h3 { margin: 0 0 8px; font-size: 18px; }
+    .set-group .row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+    .set-group .btn { margin-top: 10px; min-height: 52px; font-size: 18px; }
+    .set-group label.small { display: block; font-size: 14px; color: var(--sub); margin-bottom: 4px; }
+
+    footer {
+      margin: 24px 16px 0;
+      font-size: 12px;
+      color: var(--sub);
+    }
+    footer a { color: inherit; }
+
+    @media (prefers-reduced-motion: reduce) {
+      .saved-pop { animation: none; }
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+
+    <!-- ========== 日付 ========== -->
+    <header class="masthead">
+      <p class="greet" id="greet">おはようございます</p>
+      <h1 class="day">
+        <span class="md" id="md"></span>
+        <span class="wd" id="wd"></span>
+      </h1>
+    </header>
+
+    <!-- ========== 1. 血圧 ========== -->
+    <section class="block">
+      <h2>けさの血圧</h2>
+      <div class="bp-sheet" id="bp-sheet">
+        <div class="bp-row">
+          <label for="bp-sys">最高血圧</label>
+          <input id="bp-sys" type="text" inputmode="numeric" pattern="[0-9]*" maxlength="3" autocomplete="off" enterkeyhint="next">
+          <span class="unit">mmHg</span>
+        </div>
+        <div class="bp-row">
+          <label for="bp-dia">最低血圧</label>
+          <input id="bp-dia" type="text" inputmode="numeric" pattern="[0-9]*" maxlength="3" autocomplete="off" enterkeyhint="next">
+          <span class="unit">mmHg</span>
+        </div>
+        <div class="bp-row">
+          <label for="bp-pulse">脈拍</label>
+          <input id="bp-pulse" type="text" inputmode="numeric" pattern="[0-9]*" maxlength="3" autocomplete="off" enterkeyhint="done">
+          <span class="unit">拍/分</span>
+        </div>
+        <div class="bp-actions">
+          <button class="btn" id="bp-save">記録する</button>
+          <button class="btn" id="bp-range" aria-expanded="false">2週間の記録</button>
+        </div>
+        <p class="msg" id="bp-msg" role="status"></p>
+
+        <div class="history" id="bp-history-box">
+          <h3 id="bp-history-title">最近の記録</h3>
+          <ul id="bp-history"></ul>
+          <p class="note">最高血圧140・最低血圧85 mmHg 以上は赤で表示します。</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ========== 2. 天気 ========== -->
+    <section class="block">
+      <h2>きょうの天気</h2>
+      <div class="wx" id="wx-home" data-key="home" data-where="自宅"></div>
+      <div class="wx" id="wx-work" data-key="work" data-where="勤務地"></div>
+    </section>
+
+    <!-- ========== 3. バスの時刻表 ========== -->
+    <section class="block">
+      <h2>バスの時刻表</h2>
+      <div class="bus-pair">
+        <button class="btn bus-btn" data-bus="kokusai">国際興業バス</button>
+        <button class="btn bus-btn" data-bus="seibu">西武バス</button>
+      </div>
+      <p class="msg bus-msg" id="bus-msg"></p>
+    </section>
+
+    <!-- ========== 4. 勤務カレンダー ========== -->
+    <section class="block">
+      <h2>勤務カレンダー</h2>
+      <button class="btn cal-btn" id="cal-open"><span class="ico">📅</span>カレンダーを開く</button>
+      <p class="msg" id="cal-msg"></p>
+    </section>
+
+    <!-- ========== 設定 ========== -->
+    <details class="settings" id="settings">
+      <summary>場所・バス・カレンダーの設定</summary>
+
+      <div class="set-group" data-key="home">
+        <h3>自宅の場所</h3>
+        <div class="row">
+          <select class="js-pref" aria-label="自宅の都道府県"></select>
+          <input class="js-city" type="text" placeholder="市区町村" aria-label="自宅の市区町村">
+        </div>
+        <button class="btn js-save">自宅の場所を保存</button>
+        <p class="msg js-msg"></p>
+      </div>
+
+      <div class="set-group" data-key="work">
+        <h3>勤務地の場所</h3>
+        <div class="row">
+          <select class="js-pref" aria-label="勤務地の都道府県"></select>
+          <input class="js-city" type="text" placeholder="市区町村" aria-label="勤務地の市区町村">
+        </div>
+        <button class="btn js-save">勤務地の場所を保存</button>
+        <p class="msg js-msg"></p>
+      </div>
+
+      <div class="set-group">
+        <h3>国際興業バスの時刻表URL</h3>
+        <label class="small" for="bus-url-kokusai">https:// から始まるアドレス</label>
+        <input id="bus-url-kokusai" type="url" placeholder="https://..." autocomplete="off">
+        <button class="btn bus-save" data-bus="kokusai">URLを保存</button>
+        <p class="msg" id="bus-set-msg-kokusai"></p>
+      </div>
+
+      <div class="set-group">
+        <h3>西武バスの時刻表URL</h3>
+        <label class="small" for="bus-url-seibu">https:// から始まるアドレス</label>
+        <input id="bus-url-seibu" type="url" placeholder="https://..." autocomplete="off">
+        <button class="btn bus-save" data-bus="seibu">URLを保存</button>
+        <p class="msg" id="bus-set-msg-seibu"></p>
+      </div>
+
+      <div class="set-group">
+        <h3>勤務カレンダーのURL</h3>
+        <label class="small" for="cal-url">https:// から始まるアドレス</label>
+        <input id="cal-url" type="url" placeholder="https://..." autocomplete="off">
+        <button class="btn" id="cal-save">URLを保存</button>
+        <p class="msg" id="cal-set-msg"></p>
+      </div>
+    </details>
+
+    <footer>
+      天気：<a href="https://open-meteo.com/" target="_blank" rel="noopener">Open-Meteo</a>／
+      位置検索：<a href="https://msearch.gsi.go.jp/" target="_blank" rel="noopener">国土地理院</a>。
+      記録と設定はこのスマホのブラウザにだけ保存されます。
+    </footer>
+  </div>
+
+  <script>
+    /* ===== 保存まわり（ブラウザの localStorage にしまう。使えない環境でも止まらないようにする） ===== */
+    function load(key, fallback) {
+      try {
+        const v = localStorage.getItem('mb_' + key);
+        return v === null ? fallback : JSON.parse(v);
+      } catch (e) { return fallback; }
+    }
+    function save(key, value) {
+      try { localStorage.setItem('mb_' + key, JSON.stringify(value)); return true; }
+      catch (e) { return false; }
+    }
+    function escapeHtml(s) {
+      return String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+    }
+
+    /* ===== 日付とあいさつ ===== */
+    const WEEK = ['日', '月', '火', '水', '木', '金', '土'];
+    const now = new Date();
+    document.getElementById('md').innerHTML = `${now.getMonth() + 1}<small>月</small>${now.getDate()}<small>日</small>`;
+    document.getElementById('wd').textContent = WEEK[now.getDay()] + '曜日';
+    const hour = now.getHours();
+    document.getElementById('greet').textContent =
+      hour < 11 ? 'おはようございます。いってらっしゃい' : hour < 17 ? 'こんにちは' : 'おつかれさまでした';
+
+    /* ===================================================
+       1. 血圧
+       =================================================== */
+    const bpInputs = [
+      document.getElementById('bp-sys'),
+      document.getElementById('bp-dia'),
+      document.getElementById('bp-pulse'),
+    ];
+    const bpMsg = document.getElementById('bp-msg');
+
+    // 数字以外は入力させない（全角数字は半角に直す）
+    bpInputs.forEach((el, i) => {
+      el.addEventListener('input', () => {
+        markInvalid(el, false);   // 打ち直したら赤い枠を解除
+        el.value = el.value
+          .replace(/[０-９]/g, c => String.fromCharCode(c.charCodeAt(0) - 0xFEE0))
+          .replace(/\D/g, '')
+          .slice(0, 3);
+      });
+      // Enter（キーボードの「次へ」）で次の枠へ、最後の枠なら記録
+      el.addEventListener('keydown', e => {
+        if (e.key !== 'Enter') return;
+        e.preventDefault();
+        if (bpInputs[i + 1]) bpInputs[i + 1].focus();
+        else saveBp();
+      });
+    });
+
+    function setMsg(el, text, kind) {
+      el.className = 'msg' + (kind ? ' ' + kind : '') + (el.classList.contains('js-msg') ? ' js-msg' : '');
+      el.textContent = text;
+    }
+
+    // 入力枠を赤くする（on=true）／元に戻す（on=false）
+    function markInvalid(el, on) {
+      el.setAttribute('aria-invalid', String(on));
+      el.closest('.bp-row').classList.toggle('invalid', on);
+    }
+
+    // 入力として受け付ける範囲（これ以外は打ち間違いとみなす）
+    const BP_RANGE = [
+      { min: 70, max: 260 },   // 最高血圧
+      { min: 30, max: 180 },   // 最低血圧
+      { min: 30, max: 220 },   // 脈拍
+    ];
+
+    // エラーの枠を赤くしてメッセージを出し、最初の赤い枠にカーソルを移す
+    function showBpError(badEls, text) {
+      bpInputs.forEach(el => markInvalid(el, badEls.includes(el)));
+      setMsg(bpMsg, text, 'error');
+      badEls[0].focus();
+    }
+
+    function saveBp() {
+      const [sysEl, diaEl, pulseEl] = bpInputs;
+      const empty = bpInputs.filter(el => !el.value);
+      if (empty.length) {
+        showBpError(empty, '3つの枠すべてに数字を入れてください');
+        return;
+      }
+      const outOfRange = bpInputs.filter((el, i) => {
+        const v = Number(el.value);
+        return v < BP_RANGE[i].min || v > BP_RANGE[i].max;
+      });
+      if (outOfRange.length) {
+        showBpError(outOfRange, '数字をもう一度確認してください');
+        return;
+      }
+      const sys = Number(sysEl.value), dia = Number(diaEl.value), pulse = Number(pulseEl.value);
+      if (dia >= sys) {
+        showBpError([sysEl, diaEl], '最高と最低が逆になっていませんか');
+        return;
+      }
+      bpInputs.forEach(el => markInvalid(el, false));
+
+      const list = load('bp', []);
+      list.unshift({ at: new Date().toISOString(), sys, dia, pulse });
+      const ok = save('bp', list.slice(0, 365));
+
+      bpInputs.forEach(el => { el.value = ''; el.blur(); });
+      setMsg(bpMsg, ok ? `✓ 記録しました（${sys} / ${dia}・脈拍 ${pulse}）` : 'このブラウザでは保存できませんでした', ok ? 'done' : 'error');
+      renderBp(ok ? null : list);
+      const first = document.querySelector('#bp-history li');
+      if (first) { first.classList.remove('saved-pop'); void first.offsetWidth; first.classList.add('saved-pop'); }
+    }
+    document.getElementById('bp-save').addEventListener('click', saveBp);
+
+    // 赤字にする目安（この数値以上で「高め」表示）
+    const BP_LIMIT = { sys: 140, dia: 85 };
+
+    // false＝最近5件だけ、true＝過去2週間ぶんを全部
+    let showTwoWeeks = false;
+    const rangeBtn = document.getElementById('bp-range');
+    rangeBtn.addEventListener('click', () => {
+      showTwoWeeks = !showTwoWeeks;
+      rangeBtn.textContent = showTwoWeeks ? '閉じる' : '2週間の記録';
+      rangeBtn.setAttribute('aria-expanded', String(showTwoWeeks));
+      renderBp();
+      if (showTwoWeeks) document.getElementById('bp-history-box').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
+
+    function renderBp(list) {
+      list = list || load('bp', []);
+      const ul = document.getElementById('bp-history');
+      const title = document.getElementById('bp-history-title');
+      ul.innerHTML = '';
+
+      let rows;
+      if (showTwoWeeks) {
+        // 今日を含めて14日分（13日前の0時から）
+        const from = new Date();
+        from.setHours(0, 0, 0, 0);
+        from.setDate(from.getDate() - 13);
+        rows = list.filter(r => new Date(r.at) >= from);
+        title.textContent = `過去2週間の記録（${rows.length}件）`;
+      } else {
+        rows = list.slice(0, 5);
+        title.textContent = '最近の記録';
+      }
+
+      if (!rows.length) {
+        ul.innerHTML = list.length
+          ? '<li class="empty">この2週間の記録はありません</li>'
+          : '<li class="empty">まだ記録はありません。上の枠に入れて「記録する」を押してください</li>';
+        return;
+      }
+      rows.forEach(r => {
+        const d = new Date(r.at);
+        const hh = String(d.getHours()).padStart(2, '0');
+        const mm = String(d.getMinutes()).padStart(2, '0');
+        const high = r.sys >= BP_LIMIT.sys || r.dia >= BP_LIMIT.dia;
+        const li = document.createElement('li');
+        li.innerHTML = `
+          <span class="when">${d.getMonth() + 1}/${d.getDate()}（${WEEK[d.getDay()]}）${hh}:${mm}</span>
+          <span class="bp${high ? ' high' : ''}">${r.sys} / ${r.dia}</span>
+          <span class="pl">脈 ${r.pulse}</span>`;
+        ul.appendChild(li);
+      });
+    }
+    renderBp();
+
+    /* ===================================================
+       2. 天気（国土地理院で住所→緯度経度、Open-Meteoで予報）
+       =================================================== */
+    const PREFS = ['北海道','青森県','岩手県','宮城県','秋田県','山形県','福島県','茨城県','栃木県','群馬県',
+      '埼玉県','千葉県','東京都','神奈川県','新潟県','富山県','石川県','福井県','山梨県','長野県','岐阜県',
+      '静岡県','愛知県','三重県','滋賀県','京都府','大阪府','兵庫県','奈良県','和歌山県','鳥取県','島根県',
+      '岡山県','広島県','山口県','徳島県','香川県','愛媛県','高知県','福岡県','佐賀県','長崎県','熊本県',
+      '大分県','宮崎県','鹿児島県','沖縄県'];
+
+    // 天気コード（WMO）→ 日本語とアイコン
+    function wxInfo(code) {
+      if (code === 0) return ['快晴', '☀️'];
+      if (code === 1) return ['晴れ', '🌤️'];
+      if (code === 2) return ['晴れ時々くもり', '⛅'];
+      if (code === 3) return ['くもり', '☁️'];
+      if (code === 45 || code === 48) return ['霧', '🌫️'];
+      if (code >= 51 && code <= 57) return ['霧雨', '🌦️'];
+      if (code >= 61 && code <= 67) return [code >= 65 ? '強い雨' : '雨', '🌧️'];
+      if (code >= 71 && code <= 77) return ['雪', '🌨️'];
+      if (code >= 80 && code <= 82) return ['にわか雨', '🌦️'];
+      if (code === 85 || code === 86) return ['にわか雪', '🌨️'];
+      if (code >= 95) return ['雷雨', '⛈️'];
+      return ['—', '🌡️'];
+    }
+
+    async function geocode(pref, city) {
+      const q = pref + city;
+      const res = await fetch('https://msearch.gsi.go.jp/address-search/AddressSearch?q=' + encodeURIComponent(q));
+      if (!res.ok) throw new Error('場所を調べられませんでした。通信状況を確認してください');
+      const list = await res.json();
+      if (!list.length) throw new Error('「' + q + '」が見つかりません。市区町村名を確認してください');
+      // できるだけ「都道府県＋市区町村」で始まる候補を選ぶ
+      const hit = list.find(f => f.properties.title.startsWith(q)) || list[0];
+      const [lon, lat] = hit.geometry.coordinates;
+      return { lat, lon };
+    }
+
+    async function fetchForecast(lat, lon) {
+      const url = 'https://api.open-meteo.com/v1/forecast'
+        + `?latitude=${lat}&longitude=${lon}`
+        + '&current=temperature_2m'
+        + '&hourly=temperature_2m,precipitation_probability,weather_code'
+        + '&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max'
+        + '&timezone=Asia%2FTokyo&forecast_days=2';  // 夜に見ても翌日分まで出せるよう2日分
+      const res = await fetch(url);
+      if (!res.ok) throw new Error('天気予報を取得できませんでした');
+      return res.json();
+    }
+
+    async function renderWx(box) {
+      const key = box.dataset.key;
+      const where = box.dataset.where;
+      const loc = load('loc_' + key, null);
+      const head = `<div class="wx-head"><span class="where">${where}</span>${loc ? `<span class="place">${escapeHtml(loc.pref + loc.city)}</span>` : ''}</div>`;
+
+      if (!loc) {
+        box.innerHTML = head + `<p class="msg">場所が決まっていません。いちばん下の設定で${where}の場所を入れてください</p>`;
+        return;
+      }
+      box.innerHTML = head + '<p class="msg">天気を読み込んでいます…</p>';
+
+      try {
+        const data = await fetchForecast(loc.lat, loc.lon);
+        const d = data.daily;
+        const [desc, icon] = wxInfo(d.weather_code[0]);
+        const rainMax = d.precipitation_probability_max[0];
+        const umbrella = rainMax >= 50;
+
+        // 見ている時刻（いま）から3時間ごとに6マス
+        const nowHour = data.current.time.slice(0, 13);   // 例 "2026-10-07T08"
+        let start = data.hourly.time.findIndex(t => t.startsWith(nowHour));
+        if (start < 0) start = 0;
+        const hours = [0, 3, 6, 9, 12, 15].map(n => {
+          const i = start + n;
+          return {
+            label: n === 0 ? '今' : Number(data.hourly.time[i].slice(11, 13)) + '時',
+            now: n === 0,
+            icon: wxInfo(data.hourly.weather_code[i])[1],
+            t: Math.round(data.hourly.temperature_2m[i]),
+            p: data.hourly.precipitation_probability[i],
+          };
+        });
+
+        box.innerHTML = head + `
+          <div class="wx-now">
+            <span class="icon" aria-hidden="true">${icon}</span>
+            <span class="desc">${desc}</span>
+            <span class="temps">
+              <span class="hi">${Math.round(d.temperature_2m_max[0])}°</span><span class="sep">/</span><span class="lo">${Math.round(d.temperature_2m_min[0])}°</span>
+            </span>
+          </div>
+          <div class="wx-rain${umbrella ? ' umbrella' : ''}">
+            <span>${umbrella ? '☂ 傘を持っていきましょう' : '降水確率'}</span>
+            <b>${rainMax ?? '—'}%</b>
+          </div>
+          <div class="hours">
+            ${hours.map(x => `<div${x.now ? ' class="now"' : ''}><div class="h">${x.label}</div><div class="i" aria-hidden="true">${x.icon}</div><div class="t">${x.t}°</div><div class="p">${x.p ?? '—'}%</div></div>`).join('')}
+          </div>`;
+      } catch (e) {
+        box.innerHTML = head + `<p class="msg error">${escapeHtml(e.message || '天気を取得できませんでした')}。ページを開き直してください</p>`;
+      }
+    }
+
+    const wxBoxes = [document.getElementById('wx-home'), document.getElementById('wx-work')];
+    wxBoxes.forEach(renderWx);
+
+    // 設定欄（場所）
+    document.querySelectorAll('.set-group[data-key]').forEach(group => {
+      const key = group.dataset.key;
+      const loc = load('loc_' + key, null);
+      const sel = group.querySelector('.js-pref');
+      const city = group.querySelector('.js-city');
+      const msg = group.querySelector('.js-msg');
+      sel.innerHTML = '<option value="">都道府県</option>' +
+        PREFS.map(p => `<option${loc && loc.pref === p ? ' selected' : ''}>${p}</option>`).join('');
+      if (loc) city.value = loc.city;
+
+      group.querySelector('.js-save').addEventListener('click', async () => {
+        const pref = sel.value, c = city.value.trim();
+        if (!pref || !c) { setMsg(msg, '都道府県と市区町村の両方を入れてください', 'error'); return; }
+        setMsg(msg, '場所を調べています…');
+        try {
+          const { lat, lon } = await geocode(pref, c);
+          save('loc_' + key, { pref, city: c, lat, lon });
+          setMsg(msg, `✓ ${pref}${c} を保存しました`, 'done');
+          renderWx(document.querySelector(`.wx[data-key="${key}"]`));
+        } catch (e) {
+          setMsg(msg, e.message, 'error');
+        }
+      });
+    });
+
+    /* ===================================================
+       3. バスの時刻表（ボタンで各バス会社の時刻表ページを開く）
+       =================================================== */
+    const BUS_NAMES = { kokusai: '国際興業バス', seibu: '西武バス' };
+    const busMsg = document.getElementById('bus-msg');
+
+    function refreshBus() {
+      const missing = [];
+      document.querySelectorAll('.bus-btn').forEach(btn => {
+        const url = load('bus_url_' + btn.dataset.bus, '');
+        btn.disabled = !url;
+        if (!url) missing.push(BUS_NAMES[btn.dataset.bus]);
+      });
+      setMsg(busMsg, missing.length ? `${missing.join('と')}のURLが決まっていません。いちばん下の設定で入れてください` : '');
+      busMsg.classList.add('bus-msg');
+    }
+    document.querySelectorAll('.bus-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const url = load('bus_url_' + btn.dataset.bus, '');
+        if (url) window.open(url, '_blank', 'noopener');
+      });
+    });
+    document.querySelectorAll('.bus-save').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const key = btn.dataset.bus;
+        const url = document.getElementById('bus-url-' + key).value.trim();
+        const msg = document.getElementById('bus-set-msg-' + key);
+        if (!/^https?:\/\/\S+$/i.test(url)) {
+          setMsg(msg, 'https:// または http:// から始まるURLを入れてください', 'error');
+          return;
+        }
+        save('bus_url_' + key, url);
+        setMsg(msg, `✓ ${BUS_NAMES[key]}のURLを保存しました`, 'done');
+        refreshBus();
+      });
+    });
+    // 設定欄に保存済みのURLを表示しておく
+    Object.keys(BUS_NAMES).forEach(key => {
+      document.getElementById('bus-url-' + key).value = load('bus_url_' + key, '');
+    });
+    refreshBus();
+
+    /* ===================================================
+       4. 勤務カレンダー
+       =================================================== */
+    const calOpen = document.getElementById('cal-open');
+    const calMsg = document.getElementById('cal-msg');
+    const calUrl = document.getElementById('cal-url');
+    const calSetMsg = document.getElementById('cal-set-msg');
+
+    function refreshCal() {
+      const url = load('cal_url', '');
+      calUrl.value = url;
+      calOpen.disabled = !url;
+      setMsg(calMsg, url ? '' : 'カレンダーのURLが決まっていません。いちばん下の設定で入れてください');
+    }
+    calOpen.addEventListener('click', () => {
+      const url = load('cal_url', '');
+      if (url) window.open(url, '_blank', 'noopener');
+    });
+    document.getElementById('cal-save').addEventListener('click', () => {
+      const url = calUrl.value.trim();
+      if (!/^https?:\/\/\S+$/i.test(url)) {
+        setMsg(calSetMsg, 'https:// または http:// から始まるURLを入れてください', 'error');
+        return;
+      }
+      save('cal_url', url);
+      setMsg(calSetMsg, '✓ URLを保存しました', 'done');
+      refreshCal();
+    });
+    refreshCal();
+
+    // まだ何も設定していないときは、設定欄を開いておく
+    if (!load('loc_home', null) && !load('loc_work', null) && !load('cal_url', '')) {
+      document.getElementById('settings').open = true;
+    }
+  </script>
+</body>
+</html>
